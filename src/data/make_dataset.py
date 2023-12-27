@@ -53,47 +53,67 @@ class TrainTestData:
          else:
             # Log if object into datetime conversion is successful
             infologger.info('Date conversion performed successfully')
+    
+    
+    def outlier_removal(self):
+                
+                
+                '''This function removes the outlier from the data based on upper and lower threshold provided'''
+                try:
+                    self.df=self.df[(self.df[' trip_duration']>=10) & (self.df['trip_duration']<=3000)]
+                    self.df=self.df.loc[(self.df['pickup_latitude']>=40.637044) & (self.df['pickup_latitude']<=-73.770272)]
+                    self.df=self.df.loc[(self.df['pickup_longitude']>=74.035735) & (self.df['pickup_longitude']  <= -73.770272) ]
+                    self.df = self.df.loc[(self.df['dropoff_latitude'] >= 40.637044) & (self.df['dropoff_latitude'] <= 40.855256)]
+                    self.df = self.df.loc[(self.df['dropoff_longitude'] >= -74.035735) & (self.df['dropoff_longitude'] <= -73.770272)]
+                except Exception as e:
+                    #log if outlier removal is failed
+                    infologger.info(f'Outlier removal for data has failed with error : {e}')
+                    
+                else:
+                 #log if outlier removal is successful
+                 infologger.info(f'Outlier removal performed successfully')
+            
 
+    def split_traintest(self):
+
+        '''This function splits the whole data into train test as per the test percent provided'''
+
+        try:
+            # Split the data into training and testing sets
+            self.train_data, self.test_data = train_test_split(self.df, random_state=self.seed,test_size=self.test_per)
+        except Exception as e:
+            # Log if splitting fails
+            infologger.info(f'Splitting failed with error: {e}')
+        else:
+            # Log if splitting is successful
+            infologger.info('Split performed successfully')
+    def write_data(self):
+
+        '''This function writes the data into destination folder'''
+        try:
+            # Write the training and testing sets to CSV files
+            self.train_data.to_csv(Path(str(self.write_path) + '/train_data.csv'),index=False)
+            self.test_data.to_csv(Path(str(self.write_path) + '/test_data.csv'),index=False)
+        except Exception as e:
+            # Log if writing fails
+            infologger.info(f'Writing data failed with error: {e}')
+        else:
+            # Log if writing is successful
+            infologger.info('Write performed successfully')
               
-              
-          
+    def fit(self):
+        self.read_data()
+        self.date_type_conversion()
+        self.outlier_removal()
+        self.split_traintest()
+        if self.write_path !=None:
+            self.write_data()
+
+        return (self.train_data, self.test_data)
+        
          
          
              
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 @click.command()
@@ -106,16 +126,28 @@ def main(input_filepath, output_filepath):
     logger = logging.getLogger(__name__)
     logger.info('making final data set from raw data')
 
+    curr_dir=Path(__file__)
+    home_dir=curr_dir.parent.parent.parent
+    data_dir=Path(data_dir.as_posix()+ '/data')
+    input_path=Path(data_dir.as_posix() + input_filepath)
+    output_path=Path(data_dir.as_posix() + output_filepath)
+    params_path=Path(home_dir.as_posix() + '/params.yamil')
+    params=yaml.safe_load(open(params_path))['make_dataset']
+      # Create an instance of the train_test_creation class
+    if output_filepath != 'None':
+        split_data = TrainTestData(input_path, params, output_path)
 
+    else:
+        split_data = TrainTestData(input_path, params)
+    
+    # Perform the steps of reading, splitting, and writing data
+    split_data.fit()
+    
 if __name__ == '__main__':
-    log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    logging.basicConfig(level=logging.INFO, format=log_fmt)
-
-    # not used in this stub but often useful for finding various files
-    project_dir = Path(__file__).resolve().parents[2]
+  
 
     # find .env automagically by walking up directories until it's found, then
     # load up the .env entries as environment variables
   
 
-    main()
+     main()
