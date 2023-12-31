@@ -5,7 +5,8 @@ from pathlib import Path
 import yaml
 from sklearn.model_selection import train_test_split
 import pandas as pd
-from src.logger import infologger
+
+from visualization.logger import infologger
 
 # Log information about the script starting
 infologger.info('Basic cleaning and Splitting into train test data from the whole data')
